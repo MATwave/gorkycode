@@ -1,4 +1,5 @@
 version: "3.9"
+
 services:
   app:
     container_name: app
@@ -9,13 +10,12 @@ services:
     volumes:
       - ./app/facilities.db:/app/facilities.db
     networks:
-      - webnet
-
-  nginx:
-    container_name: nginx
-    networks:
-      - webnet
+      webnet:
+        ipv4_address: 172.18.0.10
 
 networks:
   webnet:
     driver: bridge
+    ipam:
+      config:
+        - subnet: "172.18.0.0/16"
