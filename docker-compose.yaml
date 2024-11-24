@@ -8,3 +8,14 @@ services:
       - "8000:8000"
     volumes:
       - ./app/facilities.db:/app/facilities.db
+    networks:
+      - webnet
+
+  nginx:
+    container_name: nginx
+    networks:
+      - webnet
+
+networks:
+  webnet:
+    driver: bridge
