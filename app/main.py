@@ -4,6 +4,7 @@ from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, Table
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from starlette.middleware.cors import CORSMiddleware
 
 # Инициализация базы данных
 DATABASE_URL = "sqlite:///./facilities.db"
@@ -34,6 +35,11 @@ app = FastAPI(
     description="Сервис определяет когортный уровень пользователя и рекомендует спортивные площадки.",
     version="1.0.0"
 )
+
+app.add_middleware(CORSMiddleware,
+                   allow_origins=["*"],
+                   allow_methods=["*"],
+                   allow_headers=["*"])
 
 # Определяем входные данные
 class UserInput(BaseModel):
