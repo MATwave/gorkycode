@@ -2,35 +2,38 @@ version: "3.9"
 services:
   app:
     build:
-      context: ./app
-    container_name: app
-    restart: always
-    expose:
-      - "8000"
+      context: .
+    ports:
+      - "8000:8000"
     volumes:
-      - ./app/facilities.db:/app/facilities.db
+      - .app/facilities.db:/app/facilities.db
+    networks:
+      - webnet
 
   nginx:
     image: nginx:latest
     container_name: nginx
-    restart: always
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - certbot-ssl:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot  # Папка для webroot
     ports:
       - "80:80"
       - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./certs:/etc/letsencrypt
     depends_on:
       - app
+    networks:
+      - webnet
 
   certbot:
-    image: certbot/certbot
+    image: certbot/cerbot
     container_name: certbot
     volumes:
-      - certbot-ssl:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot  # Папка для webroot
-    entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 2073600; done"  # Для поддержки webroot
+      - ./certs:/etc/letsencrypt
+      - ./www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - webnet
 
-volumes:
-  certbot-ssl:
+networks:
+  webnet:
+    driver: bridge
