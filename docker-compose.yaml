@@ -2,7 +2,7 @@ version: "3.9"
 services:
   app:
     build:
-      context: .
+      context: ./app/dockerfile
     ports:
       - "8000:8000"
     volumes:
