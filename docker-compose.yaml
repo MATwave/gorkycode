@@ -1,41 +1,10 @@
+version: "3.9"
 services:
   app:
     container_name: app
     build:
       context: ./app
-    expose:
-      - "8000"  # открываем порт для связи с Nginx
+    ports:
+      - "8000:8000"
     volumes:
       - ./app/facilities.db:/app/facilities.db
-    networks:
-      - webnet
-
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    ports:
-      - "80:80"   # пробрасываем порт 80 на хост
-      - "443:443"  # пробрасываем порт 443 на хост
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./certs:/etc/letsencrypt
-    depends_on:
-      - app
-    networks:
-      - webnet
-    expose:
-      - "80"  # открываем порт для внутренней сети
-
-  certbot:
-    image: certbot/certbot
-    container_name: certbot2
-    volumes:
-      - ./certs:/etc/letsencrypt
-      - ./www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-    networks:
-      - webnet
-
-networks:
-  webnet:
-    driver: bridge
