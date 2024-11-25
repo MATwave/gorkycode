@@ -1,3 +1,5 @@
+import httpx
+from bs4 import BeautifulSoup
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import List, Optional
@@ -64,6 +66,9 @@ class Recommendation(BaseModel):
     cohort: int = Field(..., description="Числовое значение когорты", example=33)
     recommended_facilities: List[str] = Field(..., description="Рекомендуемые спортивные площадки", example=["Фитнес-центр", "Открытый стадион"])
 
+class URLRequest(BaseModel):
+    url: str
+
 # Логика определения когорты
 def determine_cohort(user: UserInput) -> int:
     cohort = 0
@@ -94,3 +99,40 @@ async def get_recommendations(user: UserInput, db: Session = Depends(get_db)):
         return Recommendation(cohort=cohort, recommended_facilities=recommended_facilities)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка обработки данных: {str(e)}")
+
+
+@app.post("/api/preview")
+async def get_url_preview(request: URLRequest):
+    try:
+        # Проверка, что URL начинается с http или https
+        if not request.url.startswith(("http://", "https://")):
+            raise HTTPException(status_code=400, detail="Invalid URL format")
+
+        # Получаем HTML-страницу
+        async with httpx.AsyncClient() as client:
+            response = await client.get(request.url, timeout=10)
+        response.raise_for_status()  # Вызывает ошибку, если статус не 200
+
+        # Парсим страницу с помощью BeautifulSoup
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        # Извлечение Open Graph данных
+        metadata = {
+            "title": None,
+            "description": None,
+            "image": None
+        }
+        og_title = soup.find("meta", property="og:title")
+        og_description = soup.find("meta", property="og:description")
+        og_image = soup.find("meta", property="og:image")
+
+        metadata["title"] = og_title["content"] if og_title else soup.title.string if soup.title else "Без названия"
+        metadata["description"] = og_description["content"] if og_description else "Описание отсутствует"
+        metadata["image"] = og_image["content"] if og_image else None
+
+        return metadata
+
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=500, detail=f"HTTP Request Error: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected Error: {e}")
