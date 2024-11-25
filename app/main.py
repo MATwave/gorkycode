@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+
 import httpx
 from bs4 import BeautifulSoup
 from fastapi import FastAPI, HTTPException, Depends
@@ -129,6 +131,12 @@ async def get_url_preview(request: URLRequest):
         metadata["title"] = og_title["content"] if og_title else soup.title.string if soup.title else "Без названия"
         metadata["description"] = og_description["content"] if og_description else "Описание отсутствует"
         metadata["image"] = og_image["content"] if og_image else None
+
+        # Если og:image не найден, ищем первое встречное изображение
+        if not metadata["image"]:
+            first_img = soup.find("img")  # Ищем первый <img>
+            if first_img and first_img.get("src"):
+                metadata["image"] = urljoin(request.url, first_img["src"])  # Делаем URL абсолютным
 
         return metadata
 
