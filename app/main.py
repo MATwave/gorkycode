@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from sqlalchemy import create_engine, Column, Integer, String, Table
+from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from starlette.middleware.cors import CORSMiddleware
@@ -18,12 +18,17 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Модель таблицы в базе данных
-class Facility(Base):
-    __tablename__ = "facilities"
+class SportsPlayground(Base):
+    __tablename__ = "sports_playgrounds"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True, nullable=False)
-    cohort_range = Column(String, nullable=False)  # Строка диапазона, например: "10-30"
+    district = Column(String, nullable=False)               # Район
+    site_type = Column(String, nullable=False)              # Вид спортплощадки
+    name = Column(String, nullable=False, index=True)       # Название
+    address = Column(String, nullable=False)                # Адрес
+    photo_url = Column(String)                              # Ссылка на фото
+    model_3d_url = Column(String)                           # Ссылка на 3D модель
+    additional_characteristics = Column(String)             # Доп. характеристики
 
 # Функция получения сессии базы данных
 def get_db():
@@ -66,10 +71,7 @@ class UserInput(BaseModel):
 
 class Recommendation(BaseModel):
     cohort: int = Field(..., description="Числовое значение когорты", example=33)
-    recommended_facilities: List[str] = Field(..., description="Рекомендуемые спортивные площадки", example=["Фитнес-центр", "Открытый стадион"])
-
-class URLRequest(BaseModel):
-    url: str
+    recommended_playgrounds: List[str] = Field(..., description="Рекомендуемые спортплощадки")
 
 # Логика определения когорты
 def determine_cohort(user: UserInput) -> int:
@@ -93,15 +95,17 @@ def determine_cohort(user: UserInput) -> int:
 async def get_recommendations(user: UserInput, db: Session = Depends(get_db)):
     try:
         cohort = determine_cohort(user)
-        facilities = db.query(Facility).all()
-        recommended_facilities = [
-            facility.name for facility in facilities
-            if cohort in range(*map(int, facility.cohort_range.split('-')))
+        playgrounds = db.query(SportsPlayground).filter(SportsPlayground.district == user.district).all()
+        recommended_playgrounds = [
+            playground.name for playground in playgrounds
         ]
-        return Recommendation(cohort=cohort, recommended_facilities=recommended_facilities)
+        return Recommendation(cohort=cohort, recommended_playgrounds=recommended_playgrounds)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка обработки данных: {str(e)}")
 
+# Эндпоинт для предварительного просмотра URL
+class URLRequest(BaseModel):
+    url: str
 
 @app.post("/api/preview")
 async def get_url_preview(request: URLRequest):
