@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from starlette.middleware.cors import CORSMiddleware
@@ -29,6 +29,10 @@ class SportsPlayground(Base):
     photo_url = Column(String)                              # Ссылка на фото
     model_3d_url = Column(String)                           # Ссылка на 3D модель
     additional_characteristics = Column(String)             # Доп. характеристики
+    required_fitness_level = Column(String)                 # Необходимый уровень подготовки
+    is_group_activity = Column(Boolean)                     # групповая активность предусмотрена или нет
+    requires_teamwork = Column(Boolean)                     # требует сотрудничество
+    is_accessible_with_limitations = Column(Boolean)        # можно с ограничениями
 
 # Функция получения сессии базы данных
 def get_db():
