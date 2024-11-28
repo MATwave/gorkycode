@@ -152,3 +152,8 @@ async def get_url_preview(request: URLRequest):
         raise HTTPException(status_code=500, detail=f"HTTP Request Error: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected Error: {e}")
+
+
+@app.get("/api/hello")
+def hello():
+    return {"message": "hello"}
