@@ -156,4 +156,4 @@ async def get_url_preview(request: URLRequest):
 
 @app.get("/api/hello")
 def hello(district: str):
-    return {"message": f"Привет, ты живешь в {district}"}
+    return {"message": f"Привет, ты живешь в {district} \n https://yandex.ru/maps/-/CHAUAF~l"}
